@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Speaking Simulator</title>
+<style>
+:root{
+  --paper:#F6F4EE; --line:#E3DFD3; --ink:#232B26; --soft:#5B6560;
+  --teal:#2E5E5A; --teal-dark:#1F4441; --amber:#8A5A1E; --amber-bg:#F7EEDD;
+  --good:#3E7A4C; --good-bg:#E7F1E5; --bad:#AA3E30; --bad-bg:#F6E7E3;
+  font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);padding:2rem 1rem 4rem;}
+.wrap{max-width:820px;margin:0 auto;}
+h1{font-family:Georgia,serif;font-size:1.8rem;margin:0 0 .3rem;color:var(--teal-dark);}
+.sub{color:var(--soft);margin:0 0 1.1rem;font-size:.95rem;max-width:65ch;}
+.banner{background:var(--amber-bg);border:1px solid #E4CFA1;color:var(--amber);border-radius:4px;
+  padding:.8rem 1rem;font-size:.85rem;margin-bottom:1.6rem;line-height:1.5;}
+.tabs{display:flex;gap:.4rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.tab{font-size:.85rem;font-weight:600;padding:.5rem .9rem;border-radius:20px;border:1px solid var(--line);
+  background:#fff;color:var(--soft);cursor:pointer;}
+.tab.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+.panel{display:none;}
+.panel.active{display:block;}
+.card{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1.4rem 1.5rem;margin-bottom:1.1rem;}
+.card h3{margin:0 0 .3rem;font-size:1.05rem;color:var(--teal-dark);}
+.card .q{font-size:1rem;margin:.2rem 0 .9rem;}
+.card .bullets{font-size:.92rem;color:var(--soft);margin:0 0 .9rem 1.1rem;}
+.row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.7rem;}
+button.btn{font-size:.82rem;font-weight:600;padding:.5rem .95rem;border-radius:4px;border:1px solid var(--teal);
+  background:var(--teal);color:#fff;cursor:pointer;}
+button.btn.secondary{background:#fff;color:var(--teal-dark);}
+button.btn:disabled{opacity:.4;cursor:not-allowed;}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--teal-dark);font-size:.95rem;
+  background:var(--paper);padding:.35rem .6rem;border-radius:4px;border:1px solid var(--line);}
+textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:4px;padding:.7rem;
+  font-family:inherit;font-size:.92rem;resize:vertical;}
+.hint{font-size:.78rem;color:var(--soft);margin-top:.3rem;}
+.navbtns{display:flex;justify-content:space-between;margin-top:1rem;}
+.prep-box{background:var(--paper);border:1px dashed var(--line);border-radius:4px;padding:.9rem;margin-bottom:.9rem;}
+table.results{width:100%;border-collapse:collapse;margin:1rem 0;}
+table.results th, table.results td{text-align:left;padding:.6rem .5rem;border-bottom:1px solid var(--line);font-size:.9rem;}
+table.results th{color:var(--soft);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;}
+.band-pill{display:inline-block;background:var(--good-bg);color:var(--good);font-weight:700;border-radius:20px;
+  padding:.15rem .7rem;font-size:.9rem;}
+.overall{text-align:center;padding:1.5rem 0;}
+.overall .num{font-family:Georgia,serif;font-size:3.2rem;color:var(--teal-dark);line-height:1;}
+.overall .lbl{color:var(--soft);font-size:.85rem;margin-top:.2rem;}
+.feedback{font-size:.88rem;color:var(--ink);background:var(--paper);border-radius:4px;padding:.8rem 1rem;margin-top:.4rem;}
+.empty-note{color:var(--soft);font-size:.9rem;font-style:italic;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>IELTS Speaking Simulator</h1>
+  <p class="sub">Practise all three parts of the Speaking test, then get an automated band estimate for each of the four official criteria: Fluency &amp; Coherence, Lexical Resource, Grammatical Range &amp; Accuracy, and Pronunciation.</p>
+  <div class="banner">
+    <strong>About this scoring:</strong> the bands below are an automated estimate based on speech rate, filler-word frequency, vocabulary variety and sentence complexity in what you said. They are <em>not</em> an official IELTS result and can't judge grammatical accuracy or actual pronunciation the way a trained examiner listening to your voice can — treat them as a rough practice signal, not a guarantee of your real score.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="p1">Part 1</button>
+    <button class="tab" data-tab="p2">Part 2</button>
+    <button class="tab" data-tab="p3">Part 3</button>
+    <button class="tab" data-tab="res">Results</button>
+  </div>
+
+  <div class="panel active" id="panel-p1">
+    <p class="sub">Short, familiar questions the examiner asks about you.</p>
+    <div id="p1-questions"></div>
+    <div class="navbtns"><span></span><button class="btn secondary" onclick="goTab('p2')">Next: Part 2 →</button></div>
+  </div>
+
+  <div class="panel" id="panel-p2">
+    <div class="card">
+      <h3>Cue card</h3>
+      <p class="q" id="p2-topic"></p>
+      <ul class="bullets" id="p2-bullets"></ul>
+      <div class="prep-box">
+        <div class="row">
+          <button class="btn" id="p2-prep-btn" onclick="startPrep()">Start 1-minute preparation</button>
+          <span class="timer" id="p2-prep-timer">01:00</span>
+        </div>
+        <p class="hint">Jot down notes if you like. When the minute is up, recording starts automatically and you'll have up to 2 minutes to speak.</p>
+      </div>
+      <div class="row">
+        <button class="btn" id="p2-rec-btn" disabled onclick="toggleRecorder('p2q', 120)">🎤 Start speaking</button>
+        <span class="timer" id="p2q-timer">00:00</span>
+      </div>
+      <textarea id="p2q-text" placeholder="Your speech will appear here (or type/paste your answer if speech recognition isn't available in your browser)."></textarea>
+      <p class="hint" id="p2q-srnote"></p>
+    </div>
+    <div class="navbtns"><button class="btn secondary" onclick="goTab('p1')">← Part 1</button><button class="btn secondary" onclick="goTab('p3')">Next: Part 3 →</button></div>
+  </div>
+
+  <div class="panel" id="panel-p3">
+    <p class="sub">Deeper, more abstract questions connected to the Part 2 topic.</p>
+    <div id="p3-questions"></div>
+    <div class="navbtns"><button class="btn secondary" onclick="goTab('p2')">← Part 2</button><button class="btn" onclick="goTab('res')">See my results →</button></div>
+  </div>
+
+  <div class="panel" id="panel-res">
+    <div id="res-empty" class="empty-note">Answer at least one question in Parts 1–3, then click below.</div>
+    <div class="row"><button class="btn" onclick="calculateResults()">Calculate my band scores</button></div>
+    <div id="res-output"></div>
+  </div>
+</div>
+
+<script>
+const FILLERS = ["um","uh","erm","er","hmm","like","you know","i mean","sort of","kind of"];
+const CONNECTIVES = ["however","although","because","moreover","in addition","on the other hand","for example",
+  "furthermore","therefore","firstly","secondly","finally","in conclusion","whereas","despite","also","so","but",
+  "and then","after that","as well","besides"];
+const SUBORDINATORS = ["because","although","if","when","while","which","who","that","since","unless","whereas",
+  "even though","after","before","as"];
+
+const QUESTIONS = {
+  part1: [
+    {id:"p1q1", text:"Let's talk about your hometown. What do you like most about the place where you grew up?"},
+    {id:"p1q2", text:"Do you work or are you a student? Can you tell me a little about that?"},
+    {id:"p1q3", text:"How do you usually spend your free time?"}
+  ],
+  part2: {topic:"Describe a book that made a strong impression on you.",
+    bullets:["what the book was", "when you read it", "what it was about", "and explain why it made such a strong impression on you"]},
+  part3: [
+    {id:"p3q1", text:"Do you think reading habits have changed with technology? In what ways?"},
+    {id:"p3q2", text:"Should schools do more to encourage children to read for pleasure? Why or why not?"},
+    {id:"p3q3", text:"What role does literature play in a society, in your view?"}
+  ]
+};
+
+const SR_SUPPORTED = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+const recorders = {}; // id -> {seconds, interval, recognition, running, max}
+const answers = {};   // id -> {transcript, seconds}
+
+function buildQuestionCard(q){
+  return `<div class="card">
+    <h3>Question</h3>
+    <p class="q">${q.text}</p>
+    <div class="row">
+      <button class="btn" id="${q.id}-rec-btn" onclick="toggleRecorder('${q.id}', null)">🎤 Start answer</button>
+      <span class="timer" id="${q.id}-timer">00:00</span>
+    </div>
+    <textarea id="${q.id}-text" placeholder="Your speech will appear here (or type/paste your answer if speech recognition isn't available in your browser)."></textarea>
+    <p class="hint" id="${q.id}-srnote"></p>
+  </div>`;
+}
+
+function init(){
+  document.getElementById('p1-questions').innerHTML = QUESTIONS.part1.map(buildQuestionCard).join('');
+  document.getElementById('p3-questions').innerHTML = QUESTIONS.part3.map(buildQuestionCard).join('');
+  document.getElementById('p2-topic').textContent = QUESTIONS.part2.topic;
+  document.getElementById('p2-bullets').innerHTML = QUESTIONS.part2.bullets.map(b=>`<li>${b}</li>`).join('');
+  document.querySelectorAll('.hint[id$="-srnote"]').forEach(el=>{
+    el.textContent = SR_SUPPORTED ? "Speech recognition is on — just speak naturally." :
+      "Speech recognition isn't supported in this browser. Use the timer to time yourself, then type what you said.";
+  });
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>goTab(t.dataset.tab)));
+}
+
+function goTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+name));
+}
+
+function fmt(sec){
+  const m = Math.floor(sec/60).toString().padStart(2,'0');
+  const s = (sec%60).toString().padStart(2,'0');
+  return m+':'+s;
+}
+
+function startPrep(){
+  const btn = document.getElementById('p2-prep-btn');
+  btn.disabled = true;
+  let left = 60;
+  document.getElementById('p2-prep-timer').textContent = fmt(left);
+  const iv = setInterval(()=>{
+    left--;
+    document.getElementById('p2-prep-timer').textContent = fmt(left);
+    if(left<=0){
+      clearInterval(iv);
+      document.getElementById('p2-rec-btn').disabled = false;
+      toggleRecorder('p2q', 120); // auto-start speaking
+    }
+  },1000);
+}
+
+function toggleRecorder(id, maxSeconds){
+  const btn = document.getElementById(id+'-rec-btn');
+  if(recorders[id] && recorders[id].running){
+    stopRecorder(id);
+    return;
+  }
+  const ta = document.getElementById(id+'-text');
+  ta.value = '';
+  recorders[id] = {seconds:0, running:true, max:maxSeconds};
+  btn.textContent = '⏹ Stop';
+  const timerEl = document.getElementById(id+'-timer');
+  recorders[id].interval = setInterval(()=>{
+    recorders[id].seconds++;
+    timerEl.textContent = fmt(recorders[id].seconds);
+    if(maxSeconds && recorders[id].seconds>=maxSeconds){ stopRecorder(id); }
+  },1000);
+  if(SR_SUPPORTED){
+    const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new Rec();
+    rec.continuous = true; rec.interimResults = true; rec.lang = 'en-US';
+    let finalTranscript = '';
+    rec.onresult = (e)=>{
+      let interim = '';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
+        else interim += e.results[i][0].transcript;
+      }
+      ta.value = (finalTranscript + interim).trim();
+    };
+    rec.onerror = ()=>{};
+    rec.onend = ()=>{ if(recorders[id] && recorders[id].running){ try{ rec.start(); }catch(e){} } };
+    recorders[id].recognition = rec;
+    try{ rec.start(); }catch(e){}
+  } else {
+    ta.focus();
+  }
+}
+
+function stopRecorder(id){
+  const r = recorders[id];
+  if(!r) return;
+  r.running = false;
+  clearInterval(r.interval);
+  if(r.recognition){ try{ r.recognition.onend=null; r.recognition.stop(); }catch(e){} }
+  const btn = document.getElementById(id+'-rec-btn');
+  const label = id==='p2q' ? '🎤 Start speaking' : '🎤 Start answer';
+  btn.textContent = label;
+  const ta = document.getElementById(id+'-text');
+  answers[id] = {transcript: ta.value.trim(), seconds: r.seconds};
+}
+
+// ---------- Scoring ----------
+function metricsFor(text, seconds){
+  const clean = text.toLowerCase();
+  const words = clean.match(/[a-z']+/g) || [];
+  const wordCount = words.length;
+  const sentenceCount = Math.max(1, (text.match(/[.!?]+/g) || []).length);
+  const fillerCount = FILLERS.reduce((n,f)=> n + (clean.split(f).length-1), 0);
+  const connectiveCount = CONNECTIVES.reduce((n,c)=> n + (clean.split(c).length-1), 0);
+  const subFound = new Set();
+  SUBORDINATORS.forEach(s=>{ if(clean.includes(' '+s+' ')||clean.startsWith(s+' ')) subFound.add(s); });
+  const unique = new Set(words);
+  const longWords = words.filter(w=>w.length>=7).length;
+  const minutes = Math.max(seconds/60, 0.1);
+  return {
+    wordCount,
+    wpm: wordCount/minutes,
+    fillerRatio: wordCount ? fillerCount/wordCount : 0,
+    ttr: wordCount ? unique.size/wordCount : 0,
+    longWordRatio: wordCount ? longWords/wordCount : 0,
+    connectivesPer100: wordCount ? (connectiveCount/wordCount)*100 : 0,
+    subordinatorVariety: subFound.size,
+    avgSentenceLen: wordCount/sentenceCount
+  };
+}
+
+function avgMetrics(list){
+  const keys = ["wpm","fillerRatio","ttr","longWordRatio","connectivesPer100","subordinatorVariety","avgSentenceLen","wordCount"];
+  const out = {};
+  keys.forEach(k=> out[k] = list.reduce((s,m)=>s+m[k],0)/list.length);
+  return out;
+}
+
+function fluencyBand(m){
+  if(m.wpm>=150 && m.fillerRatio<0.03 && m.connectivesPer100>=3) return 9;
+  if(m.wpm>=140 && m.fillerRatio<0.05) return 8;
+  if(m.wpm>=120 && m.fillerRatio<0.07) return 7;
+  if(m.wpm>=100 && m.fillerRatio<0.10) return 6;
+  if(m.wpm>=80  && m.fillerRatio<0.15) return 5;
+  if(m.wpm>=60) return 4;
+  return 3;
+}
+function lexicalBand(m){
+  if(m.ttr>=0.55 && m.longWordRatio>=0.12) return 8;
+  if(m.ttr>=0.48 && m.longWordRatio>=0.09) return 7;
+  if(m.ttr>=0.42 && m.longWordRatio>=0.06) return 6;
+  if(m.ttr>=0.35) return 5;
+  if(m.ttr>=0.28) return 4;
+  return 3;
+}
+function grammarBand(m){
+  if(m.avgSentenceLen>=14 && m.subordinatorVariety>=5) return 8;
+  if(m.avgSentenceLen>=12 && m.subordinatorVariety>=4) return 7;
+  if(m.avgSentenceLen>=10 && m.subordinatorVariety>=3) return 6;
+  if(m.avgSentenceLen>=8  && m.subordinatorVariety>=2) return 5;
+  if(m.avgSentenceLen>=6) return 4;
+  return 3;
+}
+function pronunciationBand(m){ // weak proxy — capped, see disclaimer
+  if(m.wpm>=130 && m.fillerRatio<0.05) return 7;
+  if(m.wpm>=100 && m.fillerRatio<0.10) return 6;
+  if(m.wpm>=80) return 5;
+  return 4;
+}
+
+const FEEDBACK = {
+  fluency: {
+    9:"You keep going with barely any hesitation, and your ideas link together smoothly.",
+    8:"You speak fluently with only occasional pauses, and topics are developed coherently.",
+    7:"You speak at length without much effort, using a range of linking words with some flexibility.",
+    6:"You're willing to speak at length, though repetition or hesitation costs you coherence at times.",
+    5:"You keep the flow going but rely on repetition, self-correction or slower speech to do it.",
+    4:"You respond but with noticeable pauses, and simple connectives are overused.",
+    3:"Long pauses and limited ability to link sentences interrupt your flow."
+  },
+  lexical: {
+    8:"You draw on a wide vocabulary flexibly and precisely, with only occasional slips.",
+    7:"You discuss topics with a good range of vocabulary and generally paraphrase well.",
+    6:"Your vocabulary is wide enough to keep meaning clear despite some inaccuracies.",
+    5:"You manage familiar and unfamiliar topics but with limited flexibility in word choice.",
+    4:"You can talk about familiar topics but word choice errors appear on unfamiliar ones.",
+    3:"Vocabulary is limited to simple, personal information."
+  },
+  grammar: {
+    8:"You use a wide range of structures flexibly, with mostly error-free sentences.",
+    7:"You use complex structures with some flexibility, though mistakes still persist.",
+    6:"You mix simple and complex structures, though complex ones often contain errors.",
+    5:"You produce basic sentences with reasonable accuracy but complex structures are shaky.",
+    4:"Basic sentence forms appear along with frequent errors; subordination is rare.",
+    3:"You rely mostly on memorised or simple forms, with numerous errors."
+  },
+  pronunciation: {
+    7:"Your pace and delivery suggest features that are generally easy to follow — worth confirming with a real listener.",
+    6:"Delivery is generally understandable, though this tool can't check individual sounds or stress.",
+    5:"Pacing suggests some listener effort may be needed — a human check is recommended.",
+    4:"Slower, more hesitant delivery may affect clarity — this is only a rough proxy, not a phonetic assessment."
+  }
+};
+
+function roundHalf(x){ return Math.round(x*2)/2; }
+
+function calculateResults(){
+  const groups = {
+    p1: QUESTIONS.part1.map(q=>q.id),
+    p2: ["p2q"],
+    p3: QUESTIONS.part3.map(q=>q.id)
+  };
+  const allIds = [...groups.p1, ...groups.p2, ...groups.p3];
+  const filled = allIds.filter(id => answers[id] && answers[id].transcript && answers[id].transcript.split(/\s+/).length>=5);
+
+  if(filled.length===0){
+    document.getElementById('res-output').innerHTML = '';
+    document.getElementById('res-empty').textContent = "No answers detected yet — record or type at least one substantial answer (5+ words) first.";
+    return;
+  }
+  document.getElementById('res-empty').textContent = '';
+
+  const metricsList = filled.map(id => metricsFor(answers[id].transcript, answers[id].seconds || 30));
+  const m = avgMetrics(metricsList);
+
+  const fB = fluencyBand(m), lB = lexicalBand(m), gB = grammarBand(m), pB = pronunciationBand(m);
+  const overall = roundHalf((fB+lB+gB+pB)/4);
+
+  const rows = [
+    ["Fluency &amp; Coherence", fB, FEEDBACK.fluency[fB]],
+    ["Lexical Resource", lB, FEEDBACK.lexical[lB]],
+    ["Grammatical Range &amp; Accuracy", gB, FEEDBACK.grammar[gB]],
+    ["Pronunciation (low-confidence estimate)", pB, FEEDBACK.pronunciation[pB]]
+  ];
+
+  let html = `<div class="overall"><div class="num">${overall}</div><div class="lbl">Estimated overall band · based on ${filled.length} of ${allIds.length} answers</div></div>`;
+  html += `<table class="results"><thead><tr><th>Criterion</th><th>Band</th></tr></thead><tbody>`;
+  rows.forEach(r=>{ html += `<tr><td>${r[0]}</td><td><span class="band-pill">${r[1]}</span></td></tr>`; });
+  html += `</tbody></table>`;
+  rows.forEach(r=>{ html += `<div class="feedback"><strong>${r[0]}:</strong> ${r[2]}</div>`; });
+  html += `<p class="hint" style="margin-top:1rem;">Average speaking rate: ${Math.round(m.wpm)} words/min · Vocabulary variety: ${Math.round(m.ttr*100)}% · Sentence length avg: ${m.avgSentenceLen.toFixed(1)} words.</p>`;
+  if(filled.length < allIds.length){
+    html += `<p class="hint">Note: only ${filled.length} of ${allIds.length} questions had a usable answer — answer the rest for a more reliable estimate.</p>`;
+  }
+  document.getElementById('res-output').innerHTML = html;
+}
+
+init();
+</script>
+</body>
+</html>
